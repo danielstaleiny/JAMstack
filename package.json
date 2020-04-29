@@ -1,0 +1,73 @@
+{
+  "name": "jamstack",
+  "version": "1.0.0",
+  "description": "Boilerplate for JAMstack website.",
+  "main": "index.js",
+  "scripts": {
+    "prestart": "run-s clean purescript:build 11ty:build",
+    "start": "run-p develop:*",
+    "upgrade": "run-s upgrade:*",
+    "upgrade:check": "npm-check-updates -u",
+    "upgrade:update": "npm update",
+    "upgrade:git-unstage-all": "git restore --staged .",
+    "upgrade:git-stage-changes": "git add package.json package-lock.json",
+    "upgrade:git-auto-commit": "git commit -m 'Upgrade npm packages'; true",
+    "dev": "npm run start",
+    "repl": "run-p purescript:repl",
+    "prebuild": "run-p clean",
+    "build": "run-s build:*",
+    "build:generate": "run-s purescript:install purescript:build 11ty:build parcel:build",
+    "develop:generate": "run-p 11ty:watch purescript:watch parcel:watch",
+    "clean": "run-p clean:*",
+    "clean:cache": "rimraf .tmp",
+    "clean:site": "rimraf dist",
+    "clean:pure": "rimraf pages/assets/js/pure",
+    "11ty:build": "eleventy  --quiet --output .tmp/parcel",
+    "11ty:watch": "ELEVENTY_ENV=development eleventy  --quiet --watch --output .tmp/parcel",
+    "parcel:build": "parcel build .tmp/parcel/*.html --cache-dir .tmp/.cache",
+    "parcel:watch": "NODE_ENV=development parcel serve -p 3000 .tmp/parcel/*.html --cache-dir .tmp/.cache",
+    "purescript:repl": "spago repl",
+    "purescript:install": "spago install",
+    "purescript:build": "spago build --purs-args '--output pages/assets/js/pure '",
+    "purescript:watch": "spago build --watch  --clear-screen  --purs-args '--output pages/assets/js/pure '",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prettier:fix": "prettier --write '**/*.js'"
+  },
+  "alias": {
+    "pages": "./pages",
+    "includes": "./src/includes",
+    "data": "./src/data",
+    "css": "./pages/assets/css",
+    "js": "./pages/assets/js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@11ty/eleventy": "^0.10.0",
+    "@babel/plugin-transform-strict-mode": "^7.8.3",
+    "@babel/polyfill": "^7.8.7",
+    "@babel/preset-env": "^7.9.5",
+    "@fullhuman/postcss-purgecss": "^2.1.2",
+    "autoprefixer": "^9.7.6",
+    "fast-glob": "^3.2.2",
+    "js-beautify": "^1.11.0",
+    "npm-check-updates": "^4.1.2",
+    "npm-run-all": "^4.1.5",
+    "nunjucks": "^3.2.1",
+    "parcel": "^2.0.0-alpha.3.2",
+    "postcss-easy-import": "^3.0.0",
+    "prettier": "^2.0.5",
+    "rimraf": "^3.0.2",
+    "tailwindcss": "^1.3.5",
+    "workbox-build": "^5.1.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielstaleiny/JAMstack.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danielstaleiny/JAMstack/issues"
+  },
+  "homepage": "https://github.com/danielstaleiny/JAMstack#readme"
+}
