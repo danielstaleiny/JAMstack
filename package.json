@@ -24,8 +24,8 @@
     "11ty:build": "eleventy  --quiet --output .tmp/parcel",
     "11ty:build:dev": "ELEVENTY_ENV=development eleventy  --quiet --output .tmp/parcel",
     "11ty:watch": "ELEVENTY_ENV=development eleventy  --quiet --watch --output .tmp/parcel",
-    "parcel:build": "parcel build .tmp/parcel/*.html .tmp/parcel/**/*.html .tmp/parcel/*.txt --cache-dir .tmp/.cache",
-    "parcel:watch": "parcel watch .tmp/parcel/*.html .tmp/parcel/**/*.html --cache-dir .tmp/.cache",
+    "parcel:build": "parcel build '.tmp/parcel/**/index.html' .tmp/parcel/*.txt --cache-dir .tmp/.cache",
+    "parcel:watch": "parcel watch '.tmp/parcel/**/*.html' --cache-dir .tmp/.cache",
     "purescript:repl": "spago repl",
     "purescript:install": "spago install",
     "purescript:build": "NODE_ENV=production spago build --purs-args '--output pages/assets/js/pure '",
@@ -34,7 +34,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prettier:fix": "prettier --write '**/*.js'",
     "serve": "serve -l 3000 dist",
-    "web:check": "lighthouse http://l:3000/ --view"
+    "web:check": "lighthouse http://l:3000/ --view",
+    "web:hint": "hint http://l:8080/"
   },
   "alias": {
     "pages": "./pages",
@@ -52,6 +53,7 @@
     "@fullhuman/postcss-purgecss": "^2.1.2",
     "autoprefixer": "^9.7.6",
     "fast-glob": "^3.2.2",
+    "hint": "^6.0.5",
     "js-beautify": "^1.11.0",
     "lighthouse": "^5.6.0",
     "npm-check-updates": "^4.1.2",
