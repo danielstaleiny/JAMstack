@@ -1,5 +1,6 @@
 { name = "my-project"
-, dependencies = [ "console", "effect", "psci-support" ]
+, dependencies =
+  [ "console", "effect", "lists", "maybe", "psci-support", "web-html" ]
 , packages = ./packages.dhall
-, sources = [ "pages/**/*.purs","src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "pages/**/*.purs", "src/**/*.purs", "test/**/*.purs" ]
 }
