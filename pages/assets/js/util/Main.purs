@@ -35,10 +35,14 @@ import Web.HTML.Window (document)
 -- post = unit
 
 -- get = unit
+--
+-- void :: forall f a. Functor f => f a -> f Unit
+--
 fadeToggle :: Element -> Effect Unit
 fadeToggle elem = do
   classList <- classList elem
   bool <- toggle classList "opacity-0"
+  -- void $ pure bool
   Console.logShow bool
 
 
