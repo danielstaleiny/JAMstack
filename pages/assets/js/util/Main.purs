@@ -10,7 +10,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, delay, forkAff, joinFiber, launchAff_, launchAff)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
-import Web.DOM.DOMTokenList (add, remove)
+import Web.DOM.DOMTokenList (add, remove, toggle)
 import Web.DOM.Element (Element, classList, className, setClassName, toNode)
 import Web.DOM.Node (textContent)
 import Web.DOM.NonElementParentNode (getElementById)
@@ -34,17 +34,39 @@ import Web.HTML.Window (document)
 -- post = unit
 
 -- get = unit
+fadeToggle :: Element -> Effect Unit
+fadeToggle elem = do
+  classList <- classList elem
+  bool <- toggle classList "opacity-0"
+  Console.logShow bool
+
+
+-- toggle element add or remove element and return bool value if it added or remove it.
+-- remove false
+-- added true
+fadeToggle_ :: Maybe Element -> Effect Unit
+fadeToggle_ Nothing = Console.log "couldn't find it"
+fadeToggle_ (Just elem) = fadeToggle elem
+
 
 fadeIn :: Element -> Effect Unit
 fadeIn elem = do
   classList <- classList elem
   remove classList "opacity-0"
-  add classList "transition-opacity"
-  add classList "duration-300"
 
 fadeIn_ :: Maybe Element -> Effect Unit
 fadeIn_ Nothing = Console.log "couldn't find it"
 fadeIn_ (Just elem) = fadeIn elem
+
+
+fadeOut :: Element -> Effect Unit
+fadeOut elem = do
+  classList <- classList elem
+  add classList "opacity-0"
+
+fadeOut_ :: Maybe Element -> Effect Unit
+fadeOut_ Nothing = Console.log "couldn't find it"
+fadeOut_ (Just elem) = fadeOut elem
 
 -- expect to have opacity-0 on element
 -- alternatively add opacity-100 instead
@@ -59,7 +81,7 @@ main :: Effect Unit
 main = do
   doc <- window >>= document
   elem_ <- toNonElementParentNode >>> getElementById "hide-elem" $ doc -- Maybe elem
-  fadeIn_ elem_
+  fadeToggle_ elem_
   -- fadeIn_ elem_ -- Maybe Effect unit
 
 
