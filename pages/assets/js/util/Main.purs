@@ -1,22 +1,23 @@
 module Main where
 
 import Prelude
-import Effect (Effect)
-import Data.Time.Duration (Milliseconds(..))
-import Effect.Console as Console
-import Debug.Trace as D
--- Control.Monad.Eff.Console
-import Effect.Class (liftEffect)
-import Effect.Aff (Aff, delay, forkAff, joinFiber, launchAff_, launchAff)
+
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Maybe (fromMaybe)
-import Web.HTML (window)
-import Web.HTML.Window (document)
-import Web.HTML.HTMLDocument (toNonElementParentNode)
-import Web.DOM.Element (toNode)
-import Web.DOM.NonElementParentNode (getElementById)
--- import Web.DOM.Node (textContent, setTextContent, appendChild)
+import Data.Time.Duration (Milliseconds(..))
+import Debug.Trace as D
+import Effect (Effect)
+import Effect.Aff (Aff, delay, forkAff, joinFiber, launchAff_, launchAff)
+import Effect.Class (liftEffect)
+import Effect.Console as Console
+import Web.DOM.DOMTokenList (add, remove)
+import Web.DOM.Element (Element, classList, className, setClassName, toNode)
 import Web.DOM.Node (textContent)
+import Web.DOM.NonElementParentNode (getElementById)
+import Web.HTML (window)
+import Web.HTML.HTMLDocument (toNonElementParentNode)
+import Web.HTML.Window (document)
+
 -- import Web.DOM.Document (createElement)
 
 -- >>= bind
@@ -28,37 +29,76 @@ import Web.DOM.Node (textContent)
 -- let name = value
 
 
--- getById :: String -> String -> Effect String
--- getById fallback id = window
---        >>= document
---        >>= toNonElementParentNode >>> pure
---        >>= getElementById id
---        >>= map toNode
---        >>> map textContent
---        >>> fromMaybe (pure fallback)
+-- getJson = unit
 
+-- post = unit
 
-slowInt :: Int -> Aff Int
-slowInt int = do
-  delay $ Milliseconds 1000.0
-  pure int
+-- get = unit
 
-slowAdd :: Int -> Int -> Aff Int
-slowAdd a b = do
-  fiberA <- forkAff $ slowInt a
-  fiberB <- forkAff $ slowInt b
+fadeIn :: Element -> Effect Unit
+fadeIn elem = do
+  classList <- classList elem
+  remove classList "opacity-0"
+  add classList "transition-opacity"
+  add classList "duration-300"
 
-  slowA <- joinFiber fiberA
-  slowB <- joinFiber fiberB
+fadeIn_ :: Maybe Element -> Effect Unit
+fadeIn_ Nothing = Console.log "couldn't find it"
+fadeIn_ (Just elem) = fadeIn elem
 
-  pure $ slowA + slowB
-
-
+-- expect to have opacity-0 on element
+-- alternatively add opacity-100 instead
+-- test if you have opacity-0 and opacity-100 what has preccedance.
+-- el.classList.add('transition-opacity');
+-- el.classList.add('duration-300');
+-- el.classList.remove('opacity-0');
+-- resolve Nothing = pure "ok"
+-- resolve _ = pure "ok"
 
 main :: Effect Unit
-main = launchAff_ do
-       result <- slowAdd 1 2
-       liftEffect $ Console.logShow result
+main = do
+  doc <- window >>= document
+  elem_ <- toNonElementParentNode >>> getElementById "hide-elem" $ doc -- Maybe elem
+  fadeIn_ elem_
+  -- fadeIn_ elem_ -- Maybe Effect unit
+
+
+  -- elem1 <- fadeIn <$> elem
+  -- fromMaybe "ok" <$> elem1 >>> pure
+  -- Console.log
+
+
+getById :: String -> String -> Effect String
+getById fallback id = window
+       >>= document
+       >>= toNonElementParentNode >>> pure
+       >>= getElementById id
+       >>= map toNode
+       >>> map textContent
+       >>> fromMaybe (pure fallback)
+
+
+-- slowInt :: Int -> Aff Int
+-- slowInt int = do
+--   delay $ Milliseconds 1000.0
+--   pure int
+
+-- slowAdd :: Int -> Int -> Aff Int
+-- slowAdd a b = do
+--   fiberA <- forkAff $ slowInt a
+--   fiberB <- forkAff $ slowInt b
+
+--   slowA <- joinFiber fiberA
+--   slowB <- joinFiber fiberB
+
+--   pure $ slowA + slowB
+
+
+
+-- main :: Effect Unit
+-- main = launchAff_ do
+--        result <- slowAdd 1 2
+--        liftEffect $ Console.logShow result
 
 
 -- forall a. Show a => a -> Effect Unit
