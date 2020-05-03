@@ -14,8 +14,9 @@ import Web.DOM.DOMTokenList (add, remove, toggle)
 import Web.DOM.Element (Element, classList, className, setClassName, toNode)
 import Web.DOM.Node (textContent)
 import Web.DOM.NonElementParentNode (getElementById)
-import Web.HTML (window)
+import Web.HTML (HTMLElement, window)
 import Web.HTML.HTMLDocument (toNonElementParentNode)
+import Web.HTML.HTMLElement (fromElement, hidden, setHidden)
 import Web.HTML.Window (document)
 
 -- import Web.DOM.Document (createElement)
@@ -68,6 +69,22 @@ fadeOut_ :: Maybe Element -> Effect Unit
 fadeOut_ Nothing = Console.log "couldn't find it"
 fadeOut_ (Just elem) = fadeOut elem
 
+
+toggleHidden :: Element -> Effect Unit
+toggleHidden elem = do
+  let htmlele_ = fromElement elem
+  case htmlele_ of (Nothing) -> Console.log "Didn't find element"
+                   (Just htmlele) -> do
+                     b <- hidden htmlele
+                     a <- case b of true -> setHidden false htmlele
+                                    false -> setHidden true htmlele
+                     pure a
+
+toggleHidden_ :: Maybe Element -> Effect Unit
+toggleHidden_ Nothing = Console.log "Didn't find element"
+toggleHidden_ (Just elem) = toggleHidden elem
+
+
 -- expect to have opacity-0 on element
 -- alternatively add opacity-100 instead
 -- test if you have opacity-0 and opacity-100 what has preccedance.
@@ -82,6 +99,7 @@ main = do
   doc <- window >>= document
   elem_ <- toNonElementParentNode >>> getElementById "hide-elem" $ doc -- Maybe elem
   fadeToggle_ elem_
+  toggleHidden_ elem_
   -- fadeIn_ elem_ -- Maybe Effect unit
 
 
