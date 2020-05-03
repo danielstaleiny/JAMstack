@@ -8,6 +8,7 @@
   , "lists"
   , "maybe"
   , "psci-support"
+  , "web-events"
   , "web-html"
   ]
 , packages = ./packages.dhall

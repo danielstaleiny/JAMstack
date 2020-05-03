@@ -3,21 +3,23 @@ module Main where
 import Prelude
 
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Maybe (fromMaybe)
 import Data.Time.Duration (Milliseconds(..))
-import Debug.Trace as D
+import Debug.Trace (traceM, trace) as D
 import Effect (Effect)
 import Effect.Aff (Aff, delay, forkAff, joinFiber, launchAff_, launchAff)
 import Effect.Class (liftEffect)
 import Effect.Console as Console
-import Web.DOM.DOMTokenList (add, remove, toggle)
-import Web.DOM.Element (Element, classList, className, setClassName, toNode)
-import Web.DOM.Node (textContent)
-import Web.DOM.NonElementParentNode (getElementById)
-import Web.HTML (HTMLElement, window)
-import Web.HTML.HTMLDocument (toNonElementParentNode)
-import Web.HTML.HTMLElement (fromElement, hidden, setHidden)
-import Web.HTML.Window (document)
+import Web.DOM.Element (Element)
+import Web.DOM.DOMTokenList (add, remove, toggle) as DOM
+import Web.DOM.Element (classList, className, setClassName, toNode) as DOM
+import Web.DOM.Node (textContent) as DOM
+import Web.DOM.NonElementParentNode (getElementById) as DOM
+import Web.HTML (HTMLElement)
+import Web.HTML (window) as HTML
+import Web.HTML.HTMLDocument (toNonElementParentNode) as HTML
+import Web.HTML.HTMLElement (fromElement, hidden, setHidden) as HTML
+import Web.HTML.Window (document) as HTML
+import Web.Event.EventTarget as Evt
 
 -- import Web.DOM.Document (createElement)
 
@@ -40,8 +42,8 @@ import Web.HTML.Window (document)
 --
 fadeToggle :: Element -> Effect Unit
 fadeToggle elem = do
-  classList <- classList elem
-  bool <- toggle classList "opacity-0"
+  classList <- DOM.classList elem
+  bool <- DOM.toggle classList "opacity-0"
   -- void $ pure bool
   Console.logShow bool
 
@@ -56,8 +58,8 @@ fadeToggle_ (Just elem) = fadeToggle elem
 
 fadeIn :: Element -> Effect Unit
 fadeIn elem = do
-  classList <- classList elem
-  remove classList "opacity-0"
+  classList <- DOM.classList elem
+  DOM.remove classList "opacity-0"
 
 fadeIn_ :: Maybe Element -> Effect Unit
 fadeIn_ Nothing = Console.log "couldn't find it"
@@ -66,8 +68,8 @@ fadeIn_ (Just elem) = fadeIn elem
 
 fadeOut :: Element -> Effect Unit
 fadeOut elem = do
-  classList <- classList elem
-  add classList "opacity-0"
+  classList <- DOM.classList elem
+  DOM.add classList "opacity-0"
 
 fadeOut_ :: Maybe Element -> Effect Unit
 fadeOut_ Nothing = Console.log "couldn't find it"
@@ -76,12 +78,12 @@ fadeOut_ (Just elem) = fadeOut elem
 
 toggleHidden :: Element -> Effect Unit
 toggleHidden elem = do
-  let htmlele_ = fromElement elem
+  let htmlele_ = HTML.fromElement elem
   case htmlele_ of (Nothing) -> Console.log "Didn't find element"
                    (Just htmlele) -> do
-                     b <- hidden htmlele
-                     a <- case b of true -> setHidden false htmlele
-                                    false -> setHidden true htmlele
+                     b <- HTML.hidden htmlele
+                     a <- case b of true -> HTML.setHidden false htmlele
+                                    false -> HTML.setHidden true htmlele
                      pure a
 
 toggleHidden_ :: Maybe Element -> Effect Unit
@@ -100,8 +102,8 @@ toggleHidden_ (Just elem) = toggleHidden elem
 
 main :: Effect Unit
 main = do
-  doc <- window >>= document
-  elem_ <- toNonElementParentNode >>> getElementById "hide-elem" $ doc -- Maybe elem
+  doc <- HTML.window >>= HTML.document
+  elem_ <- HTML.toNonElementParentNode >>> DOM.getElementById "hide-elem" $ doc -- Maybe elem
   fadeToggle_ elem_
   toggleHidden_ elem_
   -- fadeIn_ elem_ -- Maybe Effect unit
@@ -113,12 +115,12 @@ main = do
 
 
 getById :: String -> String -> Effect String
-getById fallback id = window
-       >>= document
-       >>= toNonElementParentNode >>> pure
-       >>= getElementById id
-       >>= map toNode
-       >>> map textContent
+getById fallback id = HTML.window
+       >>= HTML.document
+       >>= HTML.toNonElementParentNode >>> pure
+       >>= DOM.getElementById id
+       >>= map DOM.toNode
+       >>> map DOM.textContent
        >>> fromMaybe (pure fallback)
 
 
