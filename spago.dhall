@@ -12,5 +12,5 @@
   , "web-html"
   ]
 , packages = ./packages.dhall
-, sources = [ "pages/**/*.purs", "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "pages/assets/js/pure/**/*.purs", "test/**/*.purs" ]
 }

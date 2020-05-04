@@ -21,7 +21,10 @@ module.exports = (eleventyConfig) => {
     layouts: `../src/layouts/`,
   }
   const files = glob.sync(path.join(process.cwd(), dirs.input, '**/*'))
-  const exts = files.map((file) => path.extname(file).replace('.', ''))
+  const exts = files
+    .map((file) => path.extname(file).replace('.', ''))
+    .filter((value, index, self) => self.indexOf(value) === index) // Removes duplicates, Makes array unique
+    .filter((it) => !['purs', 'css'].includes(it))
   const filters = glob.sync(paths.filters)
   const shortcodes = glob.sync(paths.shortcodes)
   const transforms = glob.sync(paths.transforms)

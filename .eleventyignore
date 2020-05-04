@@ -84,3 +84,6 @@ _site/
 *.org
 eachMarkdownToOrg.sh
 pandoc.sh
+
+
+.
