@@ -101,7 +101,7 @@ toggleHidden_ (Just elem) = toggleHidden elem
 -- resolve _ = pure "ok"
 
 main :: Effect Unit
-main = do
+main = launchAff_ $ liftEffect do
   doc <- HTML.window >>= HTML.document
   elem_ <- HTML.toNonElementParentNode >>> DOM.getElementById "hide-elem" $ doc -- Maybe elem
   fadeToggle_ elem_
