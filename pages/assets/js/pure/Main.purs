@@ -77,12 +77,14 @@ fadeOut_ (Just elem) = fadeOut elem
 toggleHidden :: Element -> Effect Unit
 toggleHidden elem = do
   let htmlele_ = fromElement elem
-  case htmlele_ of (Nothing) -> log "Didn't find element"
-                   (Just htmlele) -> do
-                     b <- hidden htmlele
-                     a <- case b of true -> setHidden false htmlele
-                                    false -> setHidden true htmlele
-                     pure a
+  case htmlele_ of
+    (Nothing) -> log "Didn't find element"
+    (Just htmlele) -> do
+                      b <- hidden htmlele
+                      a <- case b of
+                        true -> setHidden false htmlele
+                        false -> setHidden true htmlele
+                      pure a
 
 toggleHidden_ :: Maybe Element -> Effect Unit
 toggleHidden_ Nothing = log "Didn't find element"
@@ -116,6 +118,7 @@ main :: Effect Unit
 main = launchAff_ $ liftEffect do
   doc <- window >>= document
   elem_ <- toNonElementParentNode >>> getElementById "hide-elem" $ doc -- Maybe elem
+  elem2_ <- toNonElementParentNode >>> getElementById "hide-elem2" $ doc -- Maybe elem
   fn <- do -- Event -> Effect a
     eventListener $ \evt -> log "fn, Clicky"
 
@@ -123,8 +126,11 @@ main = launchAff_ $ liftEffect do
     eventListener $ \evt -> log "fn1, Clicky"
 
   -- If you add same EventListener to same element it will not be added 2 times. or called 2 times. Only onced.
+  -- But if you add same EventListener into 2 different elements, then it would be called correctly 2 times.
 
   fromMaybe ignore $ addClickEvent fn <$> elem_
+
+  fromMaybe ignore $ addClickEvent fn <$> elem2_
 
   case elem_ of
        Nothing -> ignore
