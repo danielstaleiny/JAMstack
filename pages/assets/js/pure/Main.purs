@@ -3,10 +3,11 @@ module Main where
 import Prelude
 
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Unit (unit)
 import Effect (Effect)
 import Effect.Aff (Aff, delay, forkAff, joinFiber, launchAff_, launchAff)
 import Effect.Class (liftEffect)
-import Effect.Console as Console
+import Effect.Console (log, logShow)
 import Web.DOM.DOMTokenList (add, remove, toggle) as DOM
 import Web.DOM.Element (Element, classList, className, setClassName, toNode, toEventTarget)
 import Web.DOM.Node (textContent)
@@ -42,14 +43,14 @@ fadeToggle elem = do
   classList <- classList elem
   bool <- DOM.toggle classList "opacity-0"
   -- void $ pure bool
-  Console.logShow bool
+  logShow bool
 
 
 -- toggle element add or remove element and return bool value if it added or remove it.
 -- remove false
 -- added true
 fadeToggle_ :: Maybe Element -> Effect Unit
-fadeToggle_ Nothing = Console.log "couldn't find it"
+fadeToggle_ Nothing = log "couldn't find it"
 fadeToggle_ (Just elem) = fadeToggle elem
 
 
@@ -59,7 +60,7 @@ fadeIn elem = do
   DOM.remove classList "opacity-0"
 
 fadeIn_ :: Maybe Element -> Effect Unit
-fadeIn_ Nothing = Console.log "couldn't find it"
+fadeIn_ Nothing = log "couldn't find it"
 fadeIn_ (Just elem) = fadeIn elem
 
 
@@ -69,14 +70,14 @@ fadeOut elem = do
   DOM.add classList "opacity-0"
 
 fadeOut_ :: Maybe Element -> Effect Unit
-fadeOut_ Nothing = Console.log "couldn't find it"
+fadeOut_ Nothing = log "couldn't find it"
 fadeOut_ (Just elem) = fadeOut elem
 
 
 toggleHidden :: Element -> Effect Unit
 toggleHidden elem = do
   let htmlele_ = fromElement elem
-  case htmlele_ of (Nothing) -> Console.log "Didn't find element"
+  case htmlele_ of (Nothing) -> log "Didn't find element"
                    (Just htmlele) -> do
                      b <- hidden htmlele
                      a <- case b of true -> setHidden false htmlele
@@ -84,21 +85,19 @@ toggleHidden elem = do
                      pure a
 
 toggleHidden_ :: Maybe Element -> Effect Unit
-toggleHidden_ Nothing = Console.log "Didn't find element"
+toggleHidden_ Nothing = log "Didn't find element"
 toggleHidden_ (Just elem) = toggleHidden elem
 
 
 addClickEvent :: EventListener -> Element -> Effect Unit
 addClickEvent cb elem = do
   let et = toEventTarget elem
-
   addEventListener (EventType "click") cb false et
 
 
-addClickEvent_ :: EventListener -> Maybe Element -> Effect Unit
-addClickEvent_ _ Nothing = Console.log "Didn't find element"
-addClickEvent_ cb (Just elem) = addClickEvent cb elem
-
+-- JS addEventListener
+-- options = {passive: true}
+-- false -- indicating thot useCapture is false, Add this for best compatibility.
 
 -- expect to have opacity-0 on element
 -- alternatively add opacity-100 instead
@@ -108,16 +107,33 @@ addClickEvent_ cb (Just elem) = addClickEvent cb elem
 -- el.classList.remove('opacity-0');
 -- resolve Nothing = pure "ok"
 -- resolve _ = pure "ok"
+ignore :: forall m. Applicative m => m Unit
+ignore = pure unit
+
+
 
 main :: Effect Unit
 main = launchAff_ $ liftEffect do
   doc <- window >>= document
   elem_ <- toNonElementParentNode >>> getElementById "hide-elem" $ doc -- Maybe elem
--- options = {passive: true}
--- false -- indicating thot useCapture is false, Add this for best compatibility.
-  cb <- do
-    eventListener $ \evt -> Console.log "woaaa"
-  addClickEvent_ cb elem_
+  fn <- do -- Event -> Effect a
+    eventListener $ \evt -> log "fn, Clicky"
+
+  fn1 <- do -- Event -> Effect a
+    eventListener $ \evt -> log "fn1, Clicky"
+
+  -- If you add same EventListener to same element it will not be added 2 times. or called 2 times. Only onced.
+
+  fromMaybe ignore $ addClickEvent fn <$> elem_
+
+  case elem_ of
+       Nothing -> ignore
+       Just elem -> addClickEvent fn1 elem
+
+
+  log "Main finished."
+
+
 
   -- Evt.addEventListener
   -- Evt.removeEventListener
@@ -128,7 +144,7 @@ main = launchAff_ $ liftEffect do
 
   -- elem1 <- fadeIn <$> elem
   -- fromMaybe "ok" <$> elem1 >>> pure
-  -- Console.log
+  -- log
 
 
 getById :: String -> String -> Effect String
@@ -161,7 +177,7 @@ getById fallback id = window
 -- main :: Effect Unit
 -- main = launchAff_ do
 --        result <- slowAdd 1 2
---        liftEffect $ Console.logShow result
+--        liftEffect $ logShow result
 
 
 -- forall a. Show a => a -> Effect Unit
@@ -189,10 +205,10 @@ getById fallback id = window
 
 
 -- main :: Effect Unit
--- main = D.trace "hello" \_ -> Console.log "there"
+-- main = D.trace "hello" \_ -> log "there"
 -- main = D.traceM $ "hello3"
--- main = D.spy "hello" $ Console.log "there"
+-- main = D.spy "hello" $ log "there"
 
 
 -- main :: Effect Unit
--- main = getById "Couldn't find anything" "hide-elem" >>= Console.log
+-- main = getById "Couldn't find anything" "hide-elem" >>= log
