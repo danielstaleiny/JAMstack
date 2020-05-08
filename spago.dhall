@@ -1,6 +1,7 @@
 { name = "my-project"
 , dependencies =
   [ "aff"
+  , "aff-bus"
   , "console"
   , "debug"
   , "effect"

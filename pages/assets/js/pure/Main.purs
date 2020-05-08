@@ -3,9 +3,12 @@ module Main where
 import Prelude
 
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Tuple (fst, snd)
 import Data.Unit (unit)
+import Debug.Trace (spy, trace, traceM)
 import Effect (Effect)
-import Effect.Aff (Aff, delay, forkAff, joinFiber, launchAff_, launchAff)
+import Effect.Aff (Aff, delay, forkAff, joinFiber, launchAff, launchAff_)
+import Effect.Aff.Bus (make, read, split, write)
 import Effect.Class (liftEffect)
 import Effect.Console (log, logShow)
 import Web.DOM.DOMTokenList (add, remove, toggle) as DOM
@@ -18,6 +21,13 @@ import Web.HTML (HTMLElement, window)
 import Web.HTML.HTMLDocument (toNonElementParentNode)
 import Web.HTML.HTMLElement (fromElement, hidden, setHidden)
 import Web.HTML.Window (document)
+
+
+
+-- There is import Web.DOM.MutationObserver have a look how to implement it. It might be exactly what I need.
+-- Have a look on how to implement simple ( throttle. )
+-- Have a look on how to implement simple delay.
+-- Have a look on how to implement simple debounce.
 
 -- import Web.DOM.Document (createElement)
 
@@ -113,31 +123,177 @@ ignore :: forall m. Applicative m => m Unit
 ignore = pure unit
 
 
+-- main :: Effect Unit
+-- main = launchAff_ $ liftEffect do
+--   log "works"
+--
+--
+
+getElem :: Effect (Maybe Element)
+getElem = do
+  window >>= document >>= toNonElementParentNode >>> (getElementById "hide-elem")
+
+
+hook bus = do
+  promise <- forkAff $ do
+    text <- read bus
+    liftEffect $ traceM $ text <> "from loop"
+    hook bus
+  joinFiber promise
+
+
+hook2 bus = do
+  promise <- forkAff $ do
+    text <- read bus
+    liftEffect $ traceM $ text <> "from loop2"
+    hook2 bus
+  joinFiber promise
 
 main :: Effect Unit
-main = launchAff_ $ liftEffect do
-  doc <- window >>= document
-  elem_ <- toNonElementParentNode >>> getElementById "hide-elem" $ doc -- Maybe elem
-  elem2_ <- toNonElementParentNode >>> getElementById "hide-elem2" $ doc -- Maybe elem
+main = launchAff_ do
+  bus <- make -- Initalize buss. -> BusRW a.
+  elem_ <- liftEffect getElem
   fn <- do -- Event -> Effect a
-    eventListener $ \evt -> log "fn, Clicky"
+    liftEffect $ eventListener $ \evt ->
+      launchAff_ do
+        promise2 <- forkAff $ write "Somthing from BUS" bus
+        res2 <- joinFiber promise2
+        liftEffect $ ignore
 
-  fn1 <- do -- Event -> Effect a
-    eventListener $ \evt -> log "fn1, Clicky"
-
-  -- If you add same EventListener to same element it will not be added 2 times. or called 2 times. Only onced.
-  -- But if you add same EventListener into 2 different elements, then it would be called correctly 2 times.
-
-  fromMaybe ignore $ addClickEvent fn <$> elem_
-
-  fromMaybe ignore $ addClickEvent fn <$> elem2_
-
-  case elem_ of
-       Nothing -> ignore
-       Just elem -> addClickEvent fn1 elem
+  liftEffect $ fromMaybe ignore $ addClickEvent fn <$> elem_
+  res5p <- forkAff $ hook bus -- this will start blocking.
+  res6p <- forkAff $ hook2 bus
+  -- promise4 <- forkAff $ do
+  --   text <- read bus
+  --   liftEffect $ traceM $ text <> " so it is not same"
 
 
-  log "Main finished."
+  -- promise3 <- forkAff $ write "new value from the bus" bus
+
+
+  -- res1 <- joinFiber promise1
+  -- res4 <- joinFiber promise4
+
+  -- res2 <- joinFiber promise2
+  -- res3 <- joinFiber promise3
+  -- liftEffect $ traceM res1
+  -- liftEffect $ traceM res2
+  -- liftEffect $ traceM res3
+  -- liftEffect $ traceM res4
+  -- liftEffect $ traceM res5
+  liftEffect $ log "Done"
+  res5 <- joinFiber res5p
+  res6 <- joinFiber res6p
+  ignore
+
+
+
+
+  
+-- joinFiber
+
+
+  -- write "something new" bus
+  -- text <- read bus
+
+  -- liftEffect $ traceM $ "Welcome"
+  -- bus <- make -- Initalize buss. -> BusRW a.
+  -- liftEffect $ traceM $ bus
+  -- liftEffect $ traceM $ "Read bus"
+  -- liftEffect $ traceM $ read bus
+  -- liftEffect $ traceM $ "Bus 1"
+  -- liftEffect $ traceM $ bus
+  -- liftEffect $ traceM $ "Write bus"
+  -- liftEffect $ traceM $ write "Hello from the bus" bus
+  -- liftEffect $ traceM $ "Bus 2"
+  -- liftEffect $ traceM $ bus
+  -- liftEffect $ traceM $ "Read bus 3"
+  -- liftEffect $ traceM $ read bus
+  -- liftEffect $ traceM $ "Bus  4"
+  -- liftEffect $ traceM $ bus
+
+
+
+
+  -- bus <- make -- Initalize buss. -> BusRW a.
+  -- write "something new" bus
+  -- text <- read bus
+  -- liftEffect $ log text
+  -- liftEffect $ spy "show bus" $ traceM bus
+  -- liftEffect $ spy "read bus" $ traceM $ read bus
+  -- liftEffect $ spy "Bus 1" $ traceM $ bus
+  -- liftEffect $ spy "Write bus" $ traceM $ write "Hello from the bus" bus
+  -- liftEffect $ spy "Bus 2" $ traceM $ bus
+  -- liftEffect $ spy "read bus 2" $ traceM $ read bus
+  -- liftEffect $ spy "Bus 3" $ traceM $ bus
+
+  -- bus
+  -- read bus
+  -- pure bus
+  -- write "Hello from the bus" bus
+  -- pure bus
+  -- read bus
+  -- pure bus
+
+
+  -- liftEffect $ spy "show bus" $ traceM bus
+  -- liftEffect $ spy "read bus" $ traceM $ read bus
+  -- liftEffect $ spy "Bus 1" $ traceM $ bus
+  -- liftEffect $ spy "Write bus" $ traceM $ write "Hello from the bus" bus
+  -- liftEffect $ spy "Bus 2" $ traceM $ bus
+  -- liftEffect $ spy "read bus 2" $ traceM $ read bus
+  -- liftEffect $ spy "Bus 3" $ traceM $ bus
+  -- traceM $ read bus
+  -- trace "write bus"
+  -- write "Hello from the bus" bus
+  -- that <- read bus
+  -- traceM bus
+  -- traceM bus
+  -- write "Hello from the bus2" bus
+  -- liftEffect $ traceM that
+  -- liftEffect $ traceM that
+  -- liftEffect $ traceM bus
+
+
+
+
+  -- fn <- do -- Event -> Effect a
+  --   eventListener $ \evt -> log "fn, Clicky"
+  -- fn1 <- do -- Event -> Effect a
+  --   eventListener $ \evt -> log "fn1, Clicky"
+  -- fromMaybe ignore $ addClickEvent fn <$> elem_
+  -- fromMaybe ignore $ addClickEvent fn <$> elem2_
+  -- case elem_ of
+  --      Nothing -> ignore
+  --      Just elem -> addClickEvent fn1 elem
+  -- log "Main finished."
+
+
+
+-- main :: Effect Unit
+-- main = launchAff_ $ liftEffect do
+--   doc <- window >>= document
+--   elem_ <- toNonElementParentNode >>> getElementById "hide-elem" $ doc -- Maybe elem
+--   elem2_ <- toNonElementParentNode >>> getElementById "hide-elem2" $ doc -- Maybe elem
+--   fn <- do -- Event -> Effect a
+--     eventListener $ \evt -> log "fn, Clicky"
+
+--   fn1 <- do -- Event -> Effect a
+--     eventListener $ \evt -> log "fn1, Clicky"
+
+--   -- If you add same EventListener to same element it will not be added 2 times. or called 2 times. Only onced.
+--   -- But if you add same EventListener into 2 different elements, then it would be called correctly 2 times.
+
+--   fromMaybe ignore $ addClickEvent fn <$> elem_
+
+--   fromMaybe ignore $ addClickEvent fn <$> elem2_
+
+--   case elem_ of
+--        Nothing -> ignore
+--        Just elem -> addClickEvent fn1 elem
+
+
+--   log "Main finished."
 
 
 
