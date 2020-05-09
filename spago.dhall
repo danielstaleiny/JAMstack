@@ -2,6 +2,7 @@
 , dependencies =
   [ "aff"
   , "aff-bus"
+  , "affjax"
   , "console"
   , "debug"
   , "effect"

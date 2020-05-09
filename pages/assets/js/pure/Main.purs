@@ -21,6 +21,30 @@ import Web.HTML (HTMLElement, window)
 import Web.HTML.HTMLDocument (toNonElementParentNode)
 import Web.HTML.HTMLElement (fromElement, hidden, setHidden)
 import Web.HTML.Window (document)
+import Affjax as AX
+import Affjax.ResponseFormat as ResponseFormat
+import Data.Argonaut.Core as J
+import Data.Either (Either(..))
+import Data.HTTP.Method (Method(..))
+
+
+-- Note: if you want default value in function, use record {}
+
+
+-- Note: Use AX.request for using headers, or more tailored request.
+-- If you don't need to use headers, or you want to put them to uri, use GET POST etc.
+--
+-- AX.GE POST etc. have variantion for ignoring response.
+
+
+main :: Effect Unit
+main = launchAff_ do
+  result <- AX.request (AX.defaultRequest { url = "https://dog.ceo/api/breeds/image/random", method = Left GET, responseFormat = ResponseFormat.json })
+  case result of
+    Left err -> liftEffect $ log $ "GET /api response failed to decode: " <> AX.printError err
+    Right response -> liftEffect $ log $ "GET /api response: " <> J.stringify response.body
+
+
 
 
 
@@ -149,42 +173,42 @@ hook2 bus = do
     hook2 bus
   joinFiber promise
 
-main :: Effect Unit
-main = launchAff_ do
-  bus <- make -- Initalize buss. -> BusRW a.
-  elem_ <- liftEffect getElem
-  fn <- do -- Event -> Effect a
-    liftEffect $ eventListener $ \evt ->
-      launchAff_ do
-        promise2 <- forkAff $ write "Somthing from BUS" bus
-        res2 <- joinFiber promise2
-        liftEffect $ ignore
+-- main :: Effect Unit
+-- main = launchAff_ do
+--   bus <- make -- Initalize buss. -> BusRW a.
+--   elem_ <- liftEffect getElem
+--   fn <- do -- Event -> Effect a
+--     liftEffect $ eventListener $ \evt ->
+--       launchAff_ do
+--         promise2 <- forkAff $ write "Somthing from BUS" bus
+--         res2 <- joinFiber promise2
+--         liftEffect $ ignore
 
-  liftEffect $ fromMaybe ignore $ addClickEvent fn <$> elem_
-  res5p <- forkAff $ hook bus -- this will start blocking.
-  res6p <- forkAff $ hook2 bus
-  -- promise4 <- forkAff $ do
-  --   text <- read bus
-  --   liftEffect $ traceM $ text <> " so it is not same"
-
-
-  -- promise3 <- forkAff $ write "new value from the bus" bus
+--   liftEffect $ fromMaybe ignore $ addClickEvent fn <$> elem_
+--   res5p <- forkAff $ hook bus -- this will start blocking.
+--   res6p <- forkAff $ hook2 bus
+--   -- promise4 <- forkAff $ do
+--   --   text <- read bus
+--   --   liftEffect $ traceM $ text <> " so it is not same"
 
 
-  -- res1 <- joinFiber promise1
-  -- res4 <- joinFiber promise4
+--   -- promise3 <- forkAff $ write "new value from the bus" bus
 
-  -- res2 <- joinFiber promise2
-  -- res3 <- joinFiber promise3
-  -- liftEffect $ traceM res1
-  -- liftEffect $ traceM res2
-  -- liftEffect $ traceM res3
-  -- liftEffect $ traceM res4
-  -- liftEffect $ traceM res5
-  liftEffect $ log "Done"
-  res5 <- joinFiber res5p
-  res6 <- joinFiber res6p
-  ignore
+
+--   -- res1 <- joinFiber promise1
+--   -- res4 <- joinFiber promise4
+
+--   -- res2 <- joinFiber promise2
+--   -- res3 <- joinFiber promise3
+--   -- liftEffect $ traceM res1
+--   -- liftEffect $ traceM res2
+--   -- liftEffect $ traceM res3
+--   -- liftEffect $ traceM res4
+--   -- liftEffect $ traceM res5
+--   liftEffect $ log "Done"
+--   res5 <- joinFiber res5p
+--   res6 <- joinFiber res6p
+--   ignore
 
 
 
