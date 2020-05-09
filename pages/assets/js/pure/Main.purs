@@ -235,8 +235,8 @@ hook2 bus = do
 
 
 
-initTrottleState :: Aff( AVar Boolean)
-initTrottleState = Avar.new true
+initThrottleState :: Aff( AVar Boolean)
+initThrottleState = Avar.new true
 
 
 throttle :: AVar Boolean -> Int -> Aff Unit -> Aff Unit
@@ -257,19 +257,19 @@ throttle state waiting func = do
 
 main :: Effect Unit
 main = launchAff_ do
-  clickState <- initTrottleState
-
+  -- let throttle = initThrottleState >>= throttle_
   timereff <- liftEffect $ setTimeout 1000 $ log "after 1 second"
   -- liftEffect $ clearTimeout timereff
   bus <- make -- Initalize buss. -> BusRW a.
   elem_ <- liftEffect getElem
 
   fn <- do -- Event -> Effect a
+    initState <- initThrottleState
     liftEffect $ eventListener $ \evt ->
       launchAff_ do
         -- promise2 <- forkAff $ write "Somthing from BUS" bus
         -- res2 <- joinFiber promise2
-        throttle clickState 1000 $ liftEffect $ log "BEM BEM"
+        throttle initState 1000 $ liftEffect $ log "BEM BEM"
         liftEffect $ log "->"
 
   liftEffect $ fromMaybe ignore $ addClickEvent fn <$> elem_
