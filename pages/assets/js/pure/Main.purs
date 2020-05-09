@@ -2,15 +2,23 @@ module Main where
 
 import Prelude
 
+import Affjax as AX
+import Affjax.ResponseFormat as ResponseFormat
+import Data.Argonaut.Core as J
+import Data.Either (Either(..))
+import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (fst, snd)
 import Data.Unit (unit)
 import Debug.Trace (spy, trace, traceM)
 import Effect (Effect)
 import Effect.Aff (Aff, delay, forkAff, joinFiber, launchAff, launchAff_)
+import Effect.Aff.AVar (AVar)
+import Effect.Aff.AVar (empty, new, put, read, tryPut, tryRead, tryTake, take) as Avar
 import Effect.Aff.Bus (make, read, split, write)
 import Effect.Class (liftEffect)
 import Effect.Console (log, logShow)
+import Effect.Timer (clearTimeout, setTimeout)
 import Web.DOM.DOMTokenList (add, remove, toggle) as DOM
 import Web.DOM.Element (Element, classList, className, setClassName, toNode, toEventTarget)
 import Web.DOM.Node (textContent)
@@ -21,11 +29,7 @@ import Web.HTML (HTMLElement, window)
 import Web.HTML.HTMLDocument (toNonElementParentNode)
 import Web.HTML.HTMLElement (fromElement, hidden, setHidden)
 import Web.HTML.Window (document)
-import Affjax as AX
-import Affjax.ResponseFormat as ResponseFormat
-import Data.Argonaut.Core as J
-import Data.Either (Either(..))
-import Data.HTTP.Method (Method(..))
+
 
 
 -- Note: if you want default value in function, use record {}
@@ -37,12 +41,12 @@ import Data.HTTP.Method (Method(..))
 -- AX.GE POST etc. have variantion for ignoring response.
 
 
-main :: Effect Unit
-main = launchAff_ do
-  result <- AX.request (AX.defaultRequest { url = "https://dog.ceo/api/breeds/image/random", method = Left GET, responseFormat = ResponseFormat.json })
-  case result of
-    Left err -> liftEffect $ log $ "GET /api response failed to decode: " <> AX.printError err
-    Right response -> liftEffect $ log $ "GET /api response: " <> J.stringify response.body
+-- main :: Effect Unit
+-- main = launchAff_ do
+--   result <- AX.request (AX.defaultRequest { url = "https://dog.ceo/api/breeds/image/random", method = Left GET, responseFormat = ResponseFormat.json })
+--   case result of
+--     Left err -> liftEffect $ log $ "GET /api response failed to decode: " <> AX.printError err
+--     Right response -> liftEffect $ log $ "GET /api response: " <> J.stringify response.body
 
 
 
@@ -173,42 +177,126 @@ hook2 bus = do
     hook2 bus
   joinFiber promise
 
--- main :: Effect Unit
--- main = launchAff_ do
---   bus <- make -- Initalize buss. -> BusRW a.
---   elem_ <- liftEffect getElem
---   fn <- do -- Event -> Effect a
---     liftEffect $ eventListener $ \evt ->
---       launchAff_ do
---         promise2 <- forkAff $ write "Somthing from BUS" bus
---         res2 <- joinFiber promise2
---         liftEffect $ ignore
 
---   liftEffect $ fromMaybe ignore $ addClickEvent fn <$> elem_
---   res5p <- forkAff $ hook bus -- this will start blocking.
---   res6p <- forkAff $ hook2 bus
---   -- promise4 <- forkAff $ do
---   --   text <- read bus
---   --   liftEffect $ traceM $ text <> " so it is not same"
+--
+-- Avar = timeout = null
+-- clearTimeout(timeout)
+-- setTimeout time func()
+-- set Avar = timeout = timereff
+--
+
+-- Avar.empty -- creates empty Avar
+-- Avar.tryTake -- returns maybe avar value, leaves it empty, takes it and puts empty in
+-- Avar.tryRead -- returns maybe avar value, leaves it empty, just reads it.
+-- Avar.tryPut -- tries to fill it, and when it is already filled, do nothing. Maybe this is the one I need ??
+-- put -- Sets the value of the AVar. If the AVar is already filled, it will be queued until the value is emptied. Multiple puts will resolve in order as the AVar becomes available.
+--
 
 
---   -- promise3 <- forkAff $ write "new value from the bus" bus
+
+-- This calls the function stack after certain time.
+-- debounce wait = do
+--   state <- Avar.empty -- empty state
+--   reff_ <- Avar.tryTake state
+--   _ <- liftEffect $ case reff_ of
+--     Nothing -> ignore
+--     Just reff -> clearTimeout reff
+--   newReff <- liftEffect $ setTimeout wait (log "Yaay from debounce")
+--   _ <- Avar.tryPut newReff state
+--   liftEffect $ log "done"
 
 
---   -- res1 <- joinFiber promise1
---   -- res4 <- joinFiber promise4
 
---   -- res2 <- joinFiber promise2
---   -- res3 <- joinFiber promise3
---   -- liftEffect $ traceM res1
---   -- liftEffect $ traceM res2
---   -- liftEffect $ traceM res3
---   -- liftEffect $ traceM res4
---   -- liftEffect $ traceM res5
---   liftEffect $ log "Done"
---   res5 <- joinFiber res5p
---   res6 <- joinFiber res6p
---   ignore
+  -- Avar.empty
+  -- Avar.tryTake
+  -- Avar.tryRead
+  -- Avar.tryPut
+  -- Avar.put
+
+
+
+  
+
+
+-- function throttle (callback, limit) {
+
+--   var wait = false;
+--   return function () {
+--     if (!wait) {
+
+--       callback.apply(null, arguments);
+--       wait = true;
+--       setTimeout(function () {
+--         wait = false;
+--       }, limit);
+--     }
+--   }
+-- }
+
+
+
+initTrottleState :: Aff( AVar Boolean)
+initTrottleState = Avar.new true
+
+
+throttle :: AVar Boolean -> Int -> Aff Unit -> Aff Unit
+throttle state waiting func = do
+  continue <- Avar.take state
+  case continue of
+    true -> do
+      Avar.put false state
+      _ <- liftEffect $ setTimeout waiting $ do
+        launchAff_ do
+          _ <- Avar.take state
+          Avar.put true state
+          func
+      ignore
+    false -> Avar.put false state
+
+  
+
+main :: Effect Unit
+main = launchAff_ do
+  clickState <- initTrottleState
+
+  timereff <- liftEffect $ setTimeout 1000 $ log "after 1 second"
+  -- liftEffect $ clearTimeout timereff
+  bus <- make -- Initalize buss. -> BusRW a.
+  elem_ <- liftEffect getElem
+
+  fn <- do -- Event -> Effect a
+    liftEffect $ eventListener $ \evt ->
+      launchAff_ do
+        -- promise2 <- forkAff $ write "Somthing from BUS" bus
+        -- res2 <- joinFiber promise2
+        throttle clickState 1000 $ liftEffect $ log "BEM BEM"
+        liftEffect $ log "->"
+
+  liftEffect $ fromMaybe ignore $ addClickEvent fn <$> elem_
+  res5p <- forkAff $ hook bus -- this will start blocking.
+  res6p <- forkAff $ hook2 bus
+  -- promise4 <- forkAff $ do
+  --   text <- read bus
+  --   liftEffect $ traceM $ text <> " so it is not same"
+
+
+  -- promise3 <- forkAff $ write "new value from the bus" bus
+
+
+  -- res1 <- joinFiber promise1
+  -- res4 <- joinFiber promise4
+
+  -- res2 <- joinFiber promise2
+  -- res3 <- joinFiber promise3
+  -- liftEffect $ traceM res1
+  -- liftEffect $ traceM res2
+  -- liftEffect $ traceM res3
+  -- liftEffect $ traceM res4
+  -- liftEffect $ traceM res5
+  liftEffect $ log "Done"
+  res5 <- joinFiber res5p
+  res6 <- joinFiber res6p
+  ignore
 
 
 
