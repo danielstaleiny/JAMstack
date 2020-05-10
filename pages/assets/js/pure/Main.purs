@@ -3,7 +3,7 @@ module Main where
 import Prelude
 
 import Affjax as AX
-import Affjax.ResponseFormat as ResponseFormat
+-- import Affjax.ResponseFormat as ResponseFormat
 import Data.Argonaut.Core as J
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
@@ -15,7 +15,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, delay, forkAff, joinFiber, launchAff, launchAff_)
 import Effect.Aff.AVar (AVar)
 import Effect.Aff.AVar (empty, new, put, read, tryPut, tryRead, tryTake, take) as Avar
-import Effect.Aff.Bus (make, read, split, write)
+import Effect.Aff.Bus (BusW', make, read, split, write)
 import Effect.Class (liftEffect)
 import Effect.Console (log, logShow)
 import Effect.Timer (clearTimeout, setTimeout)
@@ -151,6 +151,10 @@ ignore :: forall m. Applicative m => m Unit
 ignore = pure unit
 
 
+ignore_ :: forall m a. a -> Applicative m => m Unit
+ignore_ _ = pure unit
+
+
 -- main :: Effect Unit
 -- main = launchAff_ $ liftEffect do
 --   log "works"
@@ -249,53 +253,33 @@ throttle state waiting func = do
         launchAff_ do
           _ <- Avar.take state
           Avar.put true state
-          func
+      func
       ignore
     false -> Avar.put false state
 
-  
+
+
+
+-- | Ths function updates bus when event is triggered. Throttled by miliseconds.
+-- | Int -> Takes time in miliseconds, for Throttle function
+-- | BusW' -> Takes writeable Bus with type `a`
+-- | a -> Takes new state to be written of type `a`
+updateEvent :: forall a r. Int -> BusW' r a -> a -> Aff EventListener
+updateEvent time bus state = do
+    initState <- initThrottleState
+    liftEffect $ eventListener $ \evt ->
+      launchAff_ $ throttle initState time $ do
+        _ <- forkAff $ write state bus
+        ignore
 
 main :: Effect Unit
 main = launchAff_ do
-  -- let throttle = initThrottleState >>= throttle_
-  timereff <- liftEffect $ setTimeout 1000 $ log "after 1 second"
-  -- liftEffect $ clearTimeout timereff
   bus <- make -- Initalize buss. -> BusRW a.
   elem_ <- liftEffect getElem
-
-  fn <- do -- Event -> Effect a
-    initState <- initThrottleState
-    liftEffect $ eventListener $ \evt ->
-      launchAff_ do
-        -- promise2 <- forkAff $ write "Somthing from BUS" bus
-        -- res2 <- joinFiber promise2
-        throttle initState 1000 $ liftEffect $ log "BEM BEM"
-        liftEffect $ log "->"
-
+  fn <- updateEvent 1000 bus "Something from BUS"
   liftEffect $ fromMaybe ignore $ addClickEvent fn <$> elem_
-  res5p <- forkAff $ hook bus -- this will start blocking.
-  res6p <- forkAff $ hook2 bus
-  -- promise4 <- forkAff $ do
-  --   text <- read bus
-  --   liftEffect $ traceM $ text <> " so it is not same"
-
-
-  -- promise3 <- forkAff $ write "new value from the bus" bus
-
-
-  -- res1 <- joinFiber promise1
-  -- res4 <- joinFiber promise4
-
-  -- res2 <- joinFiber promise2
-  -- res3 <- joinFiber promise3
-  -- liftEffect $ traceM res1
-  -- liftEffect $ traceM res2
-  -- liftEffect $ traceM res3
-  -- liftEffect $ traceM res4
-  -- liftEffect $ traceM res5
-  liftEffect $ log "Done"
-  res5 <- joinFiber res5p
-  res6 <- joinFiber res6p
+  _ <- forkAff $ hook bus
+  _ <- forkAff $ hook2 bus
   ignore
 
 
