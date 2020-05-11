@@ -168,16 +168,16 @@ getElem = do
 
 hook bus = do
   promise <- forkAff $ do
-    text <- read bus
-    liftEffect $ traceM $ text <> "from loop"
+    state <- read bus
+    liftEffect $ traceM $ state.text <> " from loop"
     hook bus
   joinFiber promise
 
 
 hook2 bus = do
   promise <- forkAff $ do
-    text <- read bus
-    liftEffect $ traceM $ text <> "from loop2"
+    state <- read bus
+    liftEffect $ traceM $ state.text2 <> " text2 from loop2"
     hook2 bus
   joinFiber promise
 
@@ -274,10 +274,22 @@ updateEvent time bus state = do
 
 main :: Effect Unit
 main = launchAff_ do
+  -- Needs, AVar for keeping prev, state to know which bus to update and which one, if you need it for input fields.
+  -- Try to save primitives values into bus, to benefit from it the most. Otherwise it will push new object and everything has to re-render.
+  -- It needs totally different strategy if the bus is primitive, object, or array/list
+  -- For all it is nice to check if it changed and if it didn't don't trigger bus.
+  -- For primitives, re-render everything it uses that value
+  -- For Object it re-renders also parts which doesn't need to be re-rendered.
+  -- For Array state needs to be passed down to function to figure out what to add. Find the diff and resolve it.
   bus <- make -- Initalize buss. -> BusRW a.
   elem_ <- liftEffect getElem
-  fn <- updateEvent 1000 bus "Something from BUS"
+  fn <- updateEvent 1000 bus {text: "Text from the BUSS", text2: ""}
   liftEffect $ fromMaybe ignore $ addClickEvent fn <$> elem_
+
+  fn2 <- updateEvent 1000 bus {
+    text: "text",
+    text2: "Text from the BUSS"}
+  liftEffect $ fromMaybe ignore $ addClickEvent fn2 <$> elem_
   _ <- forkAff $ hook bus
   _ <- forkAff $ hook2 bus
   ignore
