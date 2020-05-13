@@ -6,3 +6,9 @@ You can run dev server by running
 npm run dev
 ```
 
+
+Build
+``` sh
+npm run build
+```
+
