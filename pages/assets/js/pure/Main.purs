@@ -30,8 +30,6 @@ import Web.HTML.HTMLDocument (toNonElementParentNode)
 import Web.HTML.HTMLElement (fromElement, hidden, setHidden)
 import Web.HTML.Window (document)
 
-
-
 -- Note: if you want default value in function, use record {}
 
 
@@ -426,28 +424,6 @@ getById fallback id = window
        >>> map textContent
        >>> fromMaybe (pure fallback)
 
-
--- slowInt :: Int -> Aff Int
--- slowInt int = do
---   delay $ Milliseconds 1000.0
---   pure int
-
--- slowAdd :: Int -> Int -> Aff Int
--- slowAdd a b = do
---   fiberA <- forkAff $ slowInt a
---   fiberB <- forkAff $ slowInt b
-
---   slowA <- joinFiber fiberA
---   slowB <- joinFiber fiberB
-
---   pure $ slowA + slowB
-
-
-
--- main :: Effect Unit
--- main = launchAff_ do
---        result <- slowAdd 1 2
---        liftEffect $ logShow result
 
 
 -- forall a. Show a => a -> Effect Unit
