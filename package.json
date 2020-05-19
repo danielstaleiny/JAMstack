@@ -66,6 +66,7 @@
     "postcss-cli": "^7.1.1",
     "postcss-easy-import": "^3.0.0",
     "prettier": "^2.0.5",
+    "purty": "^6.2.0",
     "rimraf": "^3.0.2",
     "serve": "^11.3.0",
     "tailwindcss": "^1.4.0",
