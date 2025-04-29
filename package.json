@@ -49,7 +49,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "@11ty/eleventy": "^0.10.0",
+    "@11ty/eleventy": "^3.0.0",
     "@babel/plugin-transform-strict-mode": "^7.8.3",
     "@babel/polyfill": "^7.8.7",
     "@babel/preset-env": "^7.9.6",
